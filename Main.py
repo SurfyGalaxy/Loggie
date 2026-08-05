@@ -1,5 +1,7 @@
+from datetime import datetime
 import os
 import io
+import json
 
 import aiosqlite
 import discord
@@ -14,17 +16,18 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 async def init_db():
-    db = await aiosqlite.connect('bot_data.db')
-    await db.execute('''
+    db = await aiosqlite.connect('data.db')
+    await db.execute("""
         CREATE TABLE IF NOT EXISTS flights (
             user_id TEXT NOT NULL,
             departure TEXT NOT NULL,
             arrival TEXT NOT NULL,
             time FLOAT NOT NULL,
             date DATE NOT NULL,
+            server BIGINT NOT NULL,
             id BIGINT NOT NULL PRIMARY KEY
         )
-    ''')
+    """)
     await db.commit()
     return db
 
@@ -47,6 +50,8 @@ async def log(interaction: discord.Interaction,
             minutes: int,
             image: discord.Attachment):
     invalid = False
+    now = datetime.now()
+
     await interaction.response.defer()
     # Data verifying goes brr
     if len(departure) != 4 or len(arrival) != 4:
@@ -64,8 +69,33 @@ async def log(interaction: discord.Interaction,
     image_data = await image.read()
     file = discord.File(fp=io.BytesIO(image_data), filename="image.png")
 
+    db = await aiosqlite.connect("data.db")
+
+    time = hours + (minutes / 60)
+
+    await db.execute("""
+        INSERT INTO flights (user_id, departure, arrival, time, date, server, id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)""", (interaction.user.id, departure, arrival, time, now.strftime("%Y-%m-%d"), interaction.guild_id, int(now.timestamp())))
+    await db.commit()
+    await db.close()
+
     await interaction.followup.send(
         content=f"You flew from {departure} to {arrival} in {hours}:{minutes}", file=file)
+
+@bot.tree.command(name="json", description="Produces a dump of all JSON data from this server")
+async def get_json(interaction: discord.Interaction):
+    
+    async with aiosqlite.connect('data.db') as db:
+        db.row_factory = aiosqlite.Row
+
+        async with db.execute("SELECT * FROM flights WHERE server = ?", (interaction.guild_id,)) as cursor:
+            rows = await cursor.fetchall()
+            result = [dict(row) for row in rows]
+            string = json.dumps(result, default=str, indent=4)
+    file = io.StringIO(string)
+    file = discord.File(file, filename="data.json")
+
+    await interaction.response.send_message(file=file)
 
 @bot.event
 async def on_ready():
@@ -80,4 +110,4 @@ async def on_ready():
     except Exception as e:
         print(f"idfk what error: {e}")
 
-bot.run(TOKEN)
+bot.run(TOKEN) 
