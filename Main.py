@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 import io
 import json
+from typing import Optional
 
 import aiosqlite
 import discord
@@ -80,7 +81,13 @@ async def log(interaction: discord.Interaction,
     await db.close()
 
     await interaction.followup.send(
-        content=f"You flew from {departure} to {arrival} in {hours}:{minutes}", file=file)
+        content=
+f"""Flight logged!
+From: {departure}
+To: {arrival}
+Time: {hours} hours {minutes} minutes
+id: {int(now.timestamp())}"""
+, file=file)
 
 @bot.tree.command(name="json", description="Produces a dump of all JSON data from this server")
 async def get_json(interaction: discord.Interaction):
@@ -95,16 +102,26 @@ async def get_json(interaction: discord.Interaction):
     file = io.StringIO(string)
     file = discord.File(file, filename="data.json")
 
-    await interaction.response.send_message(file=file)
+    await interaction.response.send_message(file=file, content=f"JSON dump for server {interaction.guild.name} ({interaction.guild_id})")
+
+@bot.tree.command(name="stats", description="Get flight hours and flight counts")
+@app_commands.describe(
+    user= "The person's stats you want to check (leave blank for everyone)",
+    start= "Start of the time period (YYYY-MM-DD) (leave blank for no limit)",
+    end= "End of the time period (YYYY-MM-DD) (leave blank for no limit)"
+)
+async def stats(
+    interaction: discord.Interaction,
+    user: Optional[discord.Member] = None,
+    start: Optional[int] = 0,
+    end: Optional[int] = 0):
+    pass
 
 @bot.event
 async def on_ready():
     await init_db()
     try:
         synced = await bot.tree.sync()
-        print("synced these commands:")
-        for cmd in synced:
-            print(f"   - /{cmd.name}")
     except discord.HTTPException as e:
         print(f"HTTP Error: {e.status} - {e.text}")
     except Exception as e:
