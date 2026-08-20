@@ -120,27 +120,58 @@ async def stats(
     end: Optional[str] = None):
     start_times = []
     end_times = []
-    
-    for time in start.split("_"):
+
+    if start is None:
+        start = "0000-01-01"
+    if end is None:
+        end = "9999-12-31"
+
+    for time in start.split("-"):
         start_times.append(int(time))
-    for time in end.split("_"):
+    for time in end.split("-"):
         end_times.append(int(time))
     
     if end_times[0] - start_times[0] == 0:
         same_year = True
-    else:
+    elif end_times[0] - start_times[0] < 0:
         await interaction.response.send_message(f"Invalid years: {end_times[0]} is before {start_times[0]}", ephemeral=True)
         return
     year = (start_times[0], end_times[0])
 
-    if end_times[1] > 12:
-        await interaction.response.send_message(f"Invalid month: {end_times[1]} isn't a month", ephemeral=True)
+    if end_times[1] > 12 or end_times[1] < 1 or type(end_times[1]) != int:
+        await interaction.response.send_message(f"Invalid month: there isn't a {end_times[1]}th month", ephemeral=True)
         return
-    if start_times[1] > 12:
-        await interaction.response.send_message(f"Invalid month: {start_times[1]} isn't a month", ephemeral=True)
+    if start_times[1] > 12 or end_times[1] < 1 or type(end_times[1]) != int:
+        await interaction.response.send_message(f"Invalid month: there isn't a {start_times[1]}th month", ephemeral=True)
         return
-
     
+    if start_times[2] < 1:
+        await interaction.response.send_message(f"Invalid day: {start_times[2]} isn't a valid date", ephemeral=True)
+    if end_times[2] < 1:
+        await interaction.response.send_message(f"Invalid day: {end_times[2]} isn't a valid date", ephemeral=True) 
+
+    for month in lookup["Months"]:
+        if month["int"] == start_times[1] and month["days"] < start_times[2]:
+            await interaction.response.send_message(f"Invalid day: {start_times[2]} is greater than the amount of days in {month["word"]} ({month["days"]})", ephemeral=True)
+            return
+        if month["int"] == end_times[1] and month["days"] < end_times[2]:
+            await interaction.response.send_message(f"Invalid day: {end_times[2]} is greater than the amount of days in {month["word"]} ({month["days"]})", ephemeral= True)
+            return
+        
+    if user is None:
+        async with aiosqlite.connect("data.db") as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT * FROM flights WHERE server = ? AND date BETWEEN ? AND ?", (interaction.guild_id, start, end)) as cursor:
+                rows = await cursor.fetchall()
+                flights = [dict(row) for row in rows]
+    else:
+        async with aiosqlite.connect("data.db") as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT * FROM flights WHERE server = ? AND user_id = ? AND date BETWEEN ? AND ?", (interaction.guild_id, user.id, start, end)) as cursor:
+                rows = await cursor.fetchall()
+                flights = [dict(row) for row in rows]
+    
+
 
 @bot.event
 async def on_ready():
