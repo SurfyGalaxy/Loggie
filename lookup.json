@@ -1,0 +1,64 @@
+{
+    "Months": [
+        {
+            "int": 1,
+            "word": "January",
+            "days": 31
+        },
+        {
+            "int": 2,
+            "word": "February",
+            "days": 28
+        },
+        {
+            "int": 3,
+            "word": "March",
+            "days": 31
+        },
+        {
+            "int": 4,
+            "word": "April",
+            "days": 30
+        },
+        {
+            "int": 5,
+            "word": "May",
+            "days": 31
+        },
+        {
+            "int": 6,
+            "word": "June",
+            "days": 30
+        },
+        {
+            "int": 7,
+            "word": "July",
+            "days": 31
+        },
+        {
+            "int": 8,
+            "word": "August",
+            "days": 31
+        },
+        {
+            "int": 9,
+            "word": "September",
+            "days": 30
+        },
+        {
+            "int": 10,
+            "word": "October",
+            "days": 31
+        },
+        {
+            "int": 11,
+            "word": "November",
+            "days": 30
+        },
+        {
+            "int": 12,
+            "word": "December",
+            "days": 31
+        }
+    ]
+}

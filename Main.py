@@ -16,6 +16,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+with open("lookup.json") as f:
+    lookup = json.load(f)
+
 async def init_db():
     db = await aiosqlite.connect('data.db')
     await db.execute("""
@@ -76,15 +79,15 @@ async def log(interaction: discord.Interaction,
 
     await db.execute("""
         INSERT INTO flights (user_id, departure, arrival, time, date, server, id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)""", (interaction.user.id, departure, arrival, time, now.strftime("%Y-%m-%d"), interaction.guild_id, int(now.timestamp())))
+        VALUES (?, ?, ?, ?, ?, ?, ?)""", (interaction.user.id, departure.upper(), arrival.upper(), time, now.strftime("%Y-%m-%d"), interaction.guild_id, int(now.timestamp())))
     await db.commit()
     await db.close()
 
     await interaction.followup.send(
         content=
 f"""Flight logged!
-From: {departure}
-To: {arrival}
+From: {departure.upper()}
+To: {arrival.upper()}
 Time: {hours} hours {minutes} minutes
 id: {int(now.timestamp())}"""
 , file=file)
@@ -102,7 +105,7 @@ async def get_json(interaction: discord.Interaction):
     file = io.StringIO(string)
     file = discord.File(file, filename="data.json")
 
-    await interaction.response.send_message(file=file, content=f"JSON dump for server {interaction.guild.name} ({interaction.guild_id})")
+    await interaction.response.send_message(file=file, content=f"JSON dump for server {interaction.guild.name} ({interaction.guild_id})", ephemeral=True)
 
 @bot.tree.command(name="stats", description="Get flight hours and flight counts")
 @app_commands.describe(
@@ -113,9 +116,31 @@ async def get_json(interaction: discord.Interaction):
 async def stats(
     interaction: discord.Interaction,
     user: Optional[discord.Member] = None,
-    start: Optional[int] = 0,
-    end: Optional[int] = 0):
-    pass
+    start: Optional[str] = None,
+    end: Optional[str] = None):
+    start_times = []
+    end_times = []
+    
+    for time in start.split("_"):
+        start_times.append(int(time))
+    for time in end.split("_"):
+        end_times.append(int(time))
+    
+    if end_times[0] - start_times[0] == 0:
+        same_year = True
+    else:
+        await interaction.response.send_message(f"Invalid years: {end_times[0]} is before {start_times[0]}", ephemeral=True)
+        return
+    year = (start_times[0], end_times[0])
+
+    if end_times[1] > 12:
+        await interaction.response.send_message(f"Invalid month: {end_times[1]} isn't a month", ephemeral=True)
+        return
+    if start_times[1] > 12:
+        await interaction.response.send_message(f"Invalid month: {start_times[1]} isn't a month", ephemeral=True)
+        return
+
+    
 
 @bot.event
 async def on_ready():
