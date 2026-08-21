@@ -35,10 +35,6 @@ async def init_db():
     await db.commit()
     return db
 
-@bot.tree.command(name="ping", description="the hello world of bots")
-async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message("Pong!")
-
 @bot.tree.command(name="log", description="log a new flight")
 @app_commands.describe(
     departure="ICAO of where you departed from",
