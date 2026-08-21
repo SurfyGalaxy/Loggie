@@ -220,6 +220,17 @@ Total hours: {total_time}h ({hours}h {minutes}m)"""
     
     await interaction.response.send_message(msg, allowed_mentions=discord.AllowedMentions(users=False))
 
+@bot.tree.command(name="delete", description="delete a flight log")
+@app_commands.default_permissions(administratior=True)
+@app_commands.describe(
+    id="The id of the log to delete"
+)
+async def delete(idee):
+    db = await aiosqlite.connect("data.db")
+    await db.execute("DELETE FROM flights WHERE id = ?", (idee))
+    await interaction.response.send_message(f"Removed log {idee}", ephemeral=True)
+    return 
+
 @bot.event
 async def on_ready():
     await init_db()
