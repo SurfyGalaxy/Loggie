@@ -171,7 +171,58 @@ async def stats(
                 rows = await cursor.fetchall()
                 flights = [dict(row) for row in rows]
     
+    total_time = 0
+    departures = []
+    arrivals = []
+    users = []
 
+    if not flights:
+        if user is None:
+            await interaction.response.send_message(f"There's no flights logged for {interaction.guild.name} currently", ephemeral=True)
+            return
+        
+        await interaction.response.send_message(f"There's no flights logged for {user}", ephemeral=True)
+
+    for log in flights:
+        total_time += log["time"]
+        departures.append(log["departure"])
+        arrivals.append(log["departure"])
+        
+        if user is None:
+            found = False
+            for pilot in users:
+                found = True
+                if pilot["user_id"] == log["user_id"]:
+                    pilot["time"] = pilot["time"] + log["time"]
+                    pilot["flights"] = pilot["flights"] + 1
+                    pilot["departures"].append(log["departure"])
+                    pilot["arrivals"].append(log["arrival"])
+            if not found:
+                users.append({
+                    "user_id": log["user_id"],
+                    "time": log["time"],
+                    "flights": 1,
+                    "departures": [log["departure"]],
+                    "arrivals": [log["arrival"]]
+                })
+    
+    time_components = str(total_time).split(".")
+    hours = time_components[0]
+    minutes = int(round(float("0." + time_components[1]) * 60, 0))
+    if user is None:
+        msg = f"""Server statistics for {interaction.guild.name}:
+From {start} - {end}
+
+Total flights: {len(flights)}
+Total hours: {total_time}h ({hours}h {minutes}m)"""
+    else:
+        msg = f"""Flight statistics for {user.mention}:
+From {start} - {end}
+
+Total flights: {len(flights)}
+Total hours: {total_time}h ({hours}h {minutes}m)"""
+    
+    await interaction.response.send_message(msg, allowed_mentions=discord.AllowedMentions(users=False))
 
 @bot.event
 async def on_ready():
