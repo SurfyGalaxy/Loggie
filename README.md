@@ -79,3 +79,7 @@ params:
 #### flight_id
 
 The flight id to remove from the database.
+
+## AI Disclaimer
+
+No AI was used for any part of this project.
