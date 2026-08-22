@@ -74,6 +74,8 @@ Leave empty for no limit
 Remove a flight log (this cannot be undone)
 
 params:
-- id
+- flight_id
 
-#### id
+#### flight_id
+
+The flight id to remove from the database.
