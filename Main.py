@@ -206,11 +206,15 @@ async def stats(
     hours = time_components[0]
     minutes = int(round(float("0." + time_components[1]) * 60, 0))
     if user is None:
+
+
         msg = f"""Server statistics for {interaction.guild.name}:
 From {start} - {end}
 
 Total flights: {len(flights)}
-Total hours: {total_time}h ({hours}h {minutes}m)"""
+Total hours: {total_time}h ({hours}h {minutes}m)
+
+Total users: {len(users)}"""
     else:
         msg = f"""Flight statistics for {user.mention}:
 From {start} - {end}
