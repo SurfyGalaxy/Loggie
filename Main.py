@@ -206,11 +206,45 @@ async def stats(
     hours = time_components[0]
     minutes = int(round(float("0." + time_components[1]) * 60, 0))
     if user is None:
+        ranked_hours = sorted(users, key=lambda x: x["time"])
+        ranked_flights = sorted(users, key=lambda x: x["flights"])
+
+        string_hours = ""
+        string_flights = ""
+
+        for pilot in ranked_hours:
+            rtime_components = str(pilot["time"]).split(".")
+            rhours = rtime_components[0]
+            rminutes = int(round(float("0." + rtime_components[1]) * 60, 0))
+            
+            member = await interaction.guild.fetch_member(int(pilot["user_id"]))
+
+            if member is not None:
+                string_hours = string_hours + f"{member.display_name}: {rhours}h {rminutes}m\n"
+            else:
+                string_hours = string_hours + f"Unknown pilot ({pilot["user_id"]}): {rhours}h {rminutes}m\n"
+
+        for pilot in ranked_flights:
+            member = await interaction.guild.fetch_member(int(pilot["user_id"]))
+        
+            if member is not None:
+                string_flights = string_flights + f"{member.display_name}: {pilot["flights"]} flight(s)\n"
+            else:
+                string_flights = string_flights + f"Unknown pilot ({pilot["user_id"]}): {pilot["flights"]} flight(s)\n"
+
         msg = f"""Server statistics for {interaction.guild.name}:
 From {start} - {end}
 
 Total flights: {len(flights)}
-Total hours: {total_time}h ({hours}h {minutes}m)"""
+Total hours: {total_time}h ({hours}h {minutes}m)
+
+Total users: {len(users)}
+
+Top hours:
+{string_hours.strip()}
+
+Top flights:
+{string_flights.strip()}"""
     else:
         msg = f"""Flight statistics for {user.mention}:
 From {start} - {end}
